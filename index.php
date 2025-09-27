@@ -6,6 +6,8 @@
 $BOT_TOKEN = getenv("TELEGRAM_BOT_TOKEN");
 $API_URL = "https://api.telegram.org/bot$BOT_TOKEN/";
 
+$cache = [];
+
 function sendMessage($chat_id, $text, $reply_markup = null) {
     global $API_URL;
     $params = [
@@ -30,10 +32,22 @@ function editMessageReplyMarkup($chat_id, $message_id, $reply_markup) {
 
 function getPrice($appid, $currency, $market_hash_name, $divide = 1) {
     $json = @file_get_contents("https://steamcommunity.com/market/priceoverview/?appid=$appid&currency=$currency&market_hash_name=" . urlencode($market_hash_name));
+    if (!$json) return null;
     $obj = json_decode($json);
-    if (!$obj || !isset($obj->lowest_price)) return 0;
+    if (!$obj || !isset($obj->lowest_price)) return null;
     $price = preg_replace("/[^0-9\.]/", '', $obj->lowest_price);
     return $price / $divide;
+}
+
+function getCachedPrice($key, $callback) {
+    global $cache;
+    $now = time();
+    if (isset($cache[$key]) && ($now - $cache[$key]['time'] < 30)) {
+        return $cache[$key]['price'];
+    }
+    $price = $callback();
+    $cache[$key] = ['time' => $now, 'price' => $price];
+    return $price;
 }
 
 function sendRegionPrices($chat_id, $type, $regions) {
@@ -44,40 +58,47 @@ function sendRegionPrices($chat_id, $type, $regions) {
         $line = [];
         foreach ($regions as $r) $line[] = $r[0] . " " . $r[1];
         $msg .= "<b>$emoji " . implode(", ", $line) . "</b>\n\n";
-
         $r = $regions[0];
-        $marketName = ($type == "key") ? "Mann Co. Supply Crate Key" : "Tour of Duty Ticket";
-        $price = getPrice(440, $r[2], $marketName, $r[3]);
-        $net = $price / 1.15;
-        $tax = $price - $net;
-        $currencySymbol = "$";
-
-        $msg .= "Full Price: " . number_format($price,2,'.','') . " $currencySymbol\n";
-        $msg .= "Net Price: " . number_format($net,2,'.','') . " $currencySymbol\n";
-        $msg .= "Tax: " . number_format($tax,2,'.','') . " $currencySymbol\n";
     } else {
         $r = $regions[0];
-        $marketName = ($type == "key") ? "Mann Co. Supply Crate Key" : "Tour of Duty Ticket";
-        $price = getPrice(440, $r[2], $marketName, $r[3]);
-        $net = $price / 1.15;
-        $tax = $price - $net;
-
-        $currencySymbol = match($r[0]) {
-            "Ukraine" => "₴",
-            "Russia" => "pуб.",
-            "India" => "₹",
-            "Brazil" => "R$",
-            "Kazakhstan" => "₸",
-            default => "$",
-        };
-
         $msg .= "<b>$emoji {$r[0]} {$r[1]}</b>\n\n";
-        $msg .= "Full Price: " . number_format($price,2,'.','') . " $currencySymbol\n";
-        $msg .= "Net Price: " . number_format($net,2,'.','') . " $currencySymbol\n";
-        $msg .= "Tax: " . number_format($tax,2,'.','') . " $currencySymbol\n";
     }
 
-    sendMessage($chat_id, trim($msg));
+    $marketName = ($type == "key") ? "Mann Co. Supply Crate Key" : "Tour of Duty Ticket";
+
+    $price = getCachedPrice("440_{$r[2]}_$marketName", function() use($r, $marketName, $type) {
+        return getPrice(440, $r[2], $marketName, $r[3]);
+    });
+
+    if ($price === null) {
+        sendMessage($chat_id, "⚠️ Unable to fetch price from Steam. Please try again later.", [
+            'inline_keyboard' => [[['text' => "⬅️ Back", 'callback_data' => 'back']]]
+        ]);
+        return;
+    }
+
+    $net = $price / 1.15;
+    $tax = $price - $net;
+
+    $currencySymbol = match($r[0]) {
+        "Ukraine" => "₴",
+        "Russia" => "pуб.",
+        "India" => "₹",
+        "Brazil" => "R$",
+        "Kazakhstan" => "₸",
+        default => "$",
+    };
+
+    $msg .= "Full Price: " . number_format($price,2,'.','') . " $currencySymbol\n";
+    $msg .= "Net Price: " . number_format($net,2,'.','') . " $currencySymbol\n";
+    $msg .= "Tax: " . number_format($tax,2,'.','') . " $currencySymbol\n";
+
+    $backButton = [
+        'inline_keyboard' => [
+            [['text' => "⬅️ Back", 'callback_data' => 'back']]
+        ]
+    ];
+    sendMessage($chat_id, trim($msg), $backButton);
 }
 
 $content = file_get_contents("php://input");
@@ -115,14 +136,72 @@ $regionsMap = [
     'region_kazakhstan' => [["Kazakhstan", "🇰🇿", 37, 100]]
 ];
 
-if ($text == "/start") sendMessage($chat_id, "Choose an option:", $mainMenu);
+if ($text == "/start") {
+    $welcome = "👋 <b>Welcome to Fake SteamPulse Bot!</b>\n\n".
+               "Check real-time prices for 🔑 <b>Keys</b> and 🎫 <b>Tickets</b> across different Steam regions.\n\n".
+               "Choose an option below to begin:";
+    sendMessage($chat_id, $welcome, $mainMenu);
+}
 
 if ($text == "/about" || $data == "about") {
     $aboutText = "This is a hobby project based on my best friend SteamPulse Web project.\n";
     $aboutText .= "Shoutout to him for his amazing work! @Amirhoseindavat ♡\n\n";
     $aboutText .= "Repo: https://github.com/MehdiAnti/FakeSteamPulseFUN\n";
     $aboutText .= "Original: https://github.com/CodeMageIR/SteamPulse_Web";
-    sendMessage($chat_id, $aboutText);
+    $backButton = [
+        'inline_keyboard' => [
+            [['text' => "⬅️ Back", 'callback_data' => 'back']]
+        ]
+    ];
+    sendMessage($chat_id, $aboutText, $backButton);
+}
+
+if ($text == "/key") {
+    $type = "key";
+    $buttons = [
+        [
+            ['text' => "🇺🇸 USA, 🇦🇷 Argentina, 🇹🇷 Turkey", 'callback_data' => 'region_row1_' . $type]
+        ],
+        [
+            ['text' => "🇺🇦 Ukraine", 'callback_data' => 'region_ukraine_' . $type],
+            ['text' => "🇷🇺 Russia", 'callback_data' => 'region_russia_' . $type]
+        ],
+        [
+            ['text' => "🇧🇷 Brazil", 'callback_data' => 'region_brazil_' . $type],
+            ['text' => "🇮🇳 India", 'callback_data' => 'region_india_' . $type]
+        ],
+        [
+            ['text' => "🇰🇿 Kazakhstan", 'callback_data' => 'region_kazakhstan_' . $type]
+        ],
+        [
+            ['text' => "⬅️ Back", 'callback_data' => 'back']
+        ]
+    ];
+    sendMessage($chat_id, "Select a region for Keys:", ['inline_keyboard' => $buttons]);
+}
+
+if ($text == "/ticket") {
+    $type = "ticket";
+    $buttons = [
+        [
+            ['text' => "🇺🇸 USA, 🇦🇷 Argentina, 🇹🇷 Turkey", 'callback_data' => 'region_row1_' . $type]
+        ],
+        [
+            ['text' => "🇺🇦 Ukraine", 'callback_data' => 'region_ukraine_' . $type],
+            ['text' => "🇷🇺 Russia", 'callback_data' => 'region_russia_' . $type]
+        ],
+        [
+            ['text' => "🇧🇷 Brazil", 'callback_data' => 'region_brazil_' . $type],
+            ['text' => "🇮🇳 India", 'callback_data' => 'region_india_' . $type]
+        ],
+        [
+            ['text' => "🇰🇿 Kazakhstan", 'callback_data' => 'region_kazakhstan_' . $type]
+        ],
+        [
+            ['text' => "⬅️ Back", 'callback_data' => 'back']
+        ]
+    ];
+    sendMessage($chat_id, "Select a region for Tickets:", ['inline_keyboard' => $buttons]);
 }
 
 if ($data == "menu_key" || $data == "menu_ticket") {
