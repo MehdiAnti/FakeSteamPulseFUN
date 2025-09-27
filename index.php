@@ -2,11 +2,8 @@
 // ===============================
 // Fake SteamPulse Telegram Bot
 // ===============================
-
 $BOT_TOKEN = getenv("TELEGRAM_BOT_TOKEN");
 $API_URL = "https://api.telegram.org/bot$BOT_TOKEN/";
-
-$cache = [];
 
 function sendMessage($chat_id, $text, $reply_markup = null) {
     global $API_URL;
@@ -39,17 +36,6 @@ function getPrice($appid, $currency, $market_hash_name, $divide = 1) {
     return $price / $divide;
 }
 
-function getCachedPrice($key, $callback) {
-    global $cache;
-    $now = time();
-    if (isset($cache[$key]) && ($now - $cache[$key]['time'] < 30)) {
-        return $cache[$key]['price'];
-    }
-    $price = $callback();
-    $cache[$key] = ['time' => $now, 'price' => $price];
-    return $price;
-}
-
 function sendRegionPrices($chat_id, $type, $regions) {
     $emoji = ($type == "key") ? "🔑" : "🎫";
     $msg = "";
@@ -65,10 +51,7 @@ function sendRegionPrices($chat_id, $type, $regions) {
     }
 
     $marketName = ($type == "key") ? "Mann Co. Supply Crate Key" : "Tour of Duty Ticket";
-
-    $price = getCachedPrice("440_{$r[2]}_$marketName", function() use($r, $marketName, $type) {
-        return getPrice(440, $r[2], $marketName, $r[3]);
-    });
+    $price = getPrice(440, $r[2], $marketName, $r[3]);
 
     if ($price === null) {
         sendMessage($chat_id, "⚠️ Unable to fetch price from Steam. Please try again later.", [
@@ -228,7 +211,9 @@ if ($data == "menu_key" || $data == "menu_ticket") {
     editMessageReplyMarkup($chat_id, $message_id, ['inline_keyboard' => $buttons]);
 }
 
-if ($data == "back") editMessageReplyMarkup($chat_id, $message_id, $mainMenu);
+if ($data == "back") {
+    sendMessage($chat_id, "Choose an option:", $mainMenu);
+}
 
 foreach ($regionsMap as $regionKey => $regionArr) {
     foreach (["key","ticket"] as $type) {
