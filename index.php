@@ -2,6 +2,7 @@
 // ===============================
 // Fake SteamPulse Telegram Bot
 // ===============================
+
 $BOT_TOKEN = getenv("TELEGRAM_BOT_TOKEN");
 $API_URL = "https://api.telegram.org/bot$BOT_TOKEN/";
 
@@ -52,10 +53,9 @@ function sendRegionPrices($chat_id, $type, $regions) {
 
     $marketName = ($type == "key") ? "Mann Co. Supply Crate Key" : "Tour of Duty Ticket";
     $price = getPrice(440, $r[2], $marketName, $r[3]);
-
     if ($price === null) {
         sendMessage($chat_id, "⚠️ Unable to fetch price from Steam. Please try again later.", [
-            'inline_keyboard' => [[['text' => "⬅️ Back", 'callback_data' => 'back']]]
+            'inline_keyboard' => [[['text' => "⬅️ Back", 'callback_data' => 'back_price']]]
         ]);
         return;
     }
@@ -78,7 +78,7 @@ function sendRegionPrices($chat_id, $type, $regions) {
 
     $backButton = [
         'inline_keyboard' => [
-            [['text' => "⬅️ Back", 'callback_data' => 'back']]
+            [['text' => "⬅️ Back", 'callback_data' => 'back_price']]
         ]
     ];
     sendMessage($chat_id, trim($msg), $backButton);
@@ -133,14 +133,13 @@ if ($text == "/about" || $data == "about") {
     $aboutText .= "Original: https://github.com/CodeMageIR/SteamPulse_Web";
     $backButton = [
         'inline_keyboard' => [
-            [['text' => "⬅️ Back", 'callback_data' => 'back']]
+            [['text' => "⬅️ Back", 'callback_data' => 'back_about']]
         ]
     ];
     sendMessage($chat_id, $aboutText, $backButton);
 }
 
-if ($text == "/key") {
-    $type = "key";
+function sendRegionMenu($chat_id, $type, $title) {
     $buttons = [
         [
             ['text' => "🇺🇸 USA, 🇦🇷 Argentina, 🇹🇷 Turkey", 'callback_data' => 'region_row1_' . $type]
@@ -160,32 +159,11 @@ if ($text == "/key") {
             ['text' => "⬅️ Back", 'callback_data' => 'back']
         ]
     ];
-    sendMessage($chat_id, "Select a region for Keys:", ['inline_keyboard' => $buttons]);
+    sendMessage($chat_id, $title, ['inline_keyboard' => $buttons]);
 }
 
-if ($text == "/ticket") {
-    $type = "ticket";
-    $buttons = [
-        [
-            ['text' => "🇺🇸 USA, 🇦🇷 Argentina, 🇹🇷 Turkey", 'callback_data' => 'region_row1_' . $type]
-        ],
-        [
-            ['text' => "🇺🇦 Ukraine", 'callback_data' => 'region_ukraine_' . $type],
-            ['text' => "🇷🇺 Russia", 'callback_data' => 'region_russia_' . $type]
-        ],
-        [
-            ['text' => "🇧🇷 Brazil", 'callback_data' => 'region_brazil_' . $type],
-            ['text' => "🇮🇳 India", 'callback_data' => 'region_india_' . $type]
-        ],
-        [
-            ['text' => "🇰🇿 Kazakhstan", 'callback_data' => 'region_kazakhstan_' . $type]
-        ],
-        [
-            ['text' => "⬅️ Back", 'callback_data' => 'back']
-        ]
-    ];
-    sendMessage($chat_id, "Select a region for Tickets:", ['inline_keyboard' => $buttons]);
-}
+if ($text == "/key") sendRegionMenu($chat_id, "key", "Select a region for Keys:");
+if ($text == "/ticket") sendRegionMenu($chat_id, "ticket", "Select a region for Tickets:");
 
 if ($data == "menu_key" || $data == "menu_ticket") {
     $type = ($data == "menu_key") ? "key" : "ticket";
@@ -211,9 +189,8 @@ if ($data == "menu_key" || $data == "menu_ticket") {
     editMessageReplyMarkup($chat_id, $message_id, ['inline_keyboard' => $buttons]);
 }
 
-if ($data == "back") {
-    sendMessage($chat_id, "Choose an option:", $mainMenu);
-}
+if ($data === 'back_price' || $data === 'back_about') sendMessage($chat_id, "Choose an option:", $mainMenu);
+if ($data === 'back') editMessageReplyMarkup($chat_id, $message_id, $mainMenu);
 
 foreach ($regionsMap as $regionKey => $regionArr) {
     foreach (["key","ticket"] as $type) {
