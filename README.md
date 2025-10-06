@@ -1,6 +1,6 @@
 # Fake SteamPulse
 
-Fake SteamPulse is a hobby Telegram bot project inspired by the SteamPulse Web project. It provides live TF2 key and ticket prices for multiple regions, fetched directly from the Steam Community Market.
+**Fake SteamPulse** is a hobby Telegram bot project inspired by the [SteamPulse_Web](https://github.com/CodeMageIR/SteamPulse_Web) project. It provides live TF2 key and ticket prices for multiple regions, fetched directly from the Steam Community Market.
 
 ## Features
 
@@ -34,11 +34,11 @@ docker run -d -e TELEGRAM_BOT_TOKEN=<YOUR_BOT_TOKEN> fakesteampulsefun
 
 After deploying, set your webhook:
 ```
-https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=https://fakesteampulsefun.onrender.com
+https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=<URL>
 
 ```
 
-Replace <YOUR_BOT_TOKEN> with your Telegram bot token.
+Replace `<YOUR_BOT_TOKEN>` with your Telegram bot token and `<URL>` with your webhook service link.
 
 ### Credits
 
