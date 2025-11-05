@@ -69,6 +69,7 @@ function sendRegionPrices($chat_id, $type, $regions) {
         "India" => "₹",
         "Brazil" => "R$",
         "Kazakhstan" => "₸",
+        "China" => "¥",
         default => "$",
     };
 
@@ -116,7 +117,8 @@ $regionsMap = [
     'region_russia' => [["Russia", "🇷🇺", 5, 100]],
     'region_brazil' => [["Brazil", "🇧🇷", 7, 100]],
     'region_india' => [["India", "🇮🇳", 24, 1]],
-    'region_kazakhstan' => [["Kazakhstan", "🇰🇿", 37, 100]]
+    'region_kazakhstan' => [["Kazakhstan", "🇰🇿", 37, 100]],
+    'region_china' => [["China", "🇨🇳", 23, 100]]
 ];
 
 if ($text == "/start") {
@@ -153,7 +155,8 @@ function sendRegionMenu($chat_id, $type, $title) {
             ['text' => "🇮🇳 India", 'callback_data' => 'region_india_' . $type]
         ],
         [
-            ['text' => "🇰🇿 Kazakhstan", 'callback_data' => 'region_kazakhstan_' . $type]
+            ['text' => "🇰🇿 Kazakhstan", 'callback_data' => 'region_kazakhstan_' . $type],
+            ['text' => "🇨🇳 China", 'callback_data' => 'region_china_' . $type]
         ],
         [
             ['text' => "⬅️ Back", 'callback_data' => 'back']
@@ -180,7 +183,8 @@ if ($data == "menu_key" || $data == "menu_ticket") {
             ['text' => "🇮🇳 India", 'callback_data' => 'region_india_' . $type]
         ],
         [
-            ['text' => "🇰🇿 Kazakhstan", 'callback_data' => 'region_kazakhstan_' . $type]
+            ['text' => "🇰🇿 Kazakhstan", 'callback_data' => 'region_kazakhstan_' . $type],
+            ['text' => "🇨🇳 China", 'callback_data' => 'region_china_' . $type]
         ],
         [
             ['text' => "⬅️ Back", 'callback_data' => 'back']
