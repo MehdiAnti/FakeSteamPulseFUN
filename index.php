@@ -118,7 +118,7 @@ $regionsMap = [
     'region_brazil' => [["Brazil", "🇧🇷", 7, 100]],
     'region_india' => [["India", "🇮🇳", 24, 1]],
     'region_kazakhstan' => [["Kazakhstan", "🇰🇿", 37, 100]],
-    'region_china' => [["China", "🇨🇳", 23, 100]]
+    'region_china' => [["China", "🇨🇳", 23, 1]]
 ];
 
 if ($text == "/start") {
