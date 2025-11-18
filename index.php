@@ -2,9 +2,6 @@
 // ===============================
 // Fake SteamPulse Telegram Bot
 // ===============================
-
-<?php
-
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
