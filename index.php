@@ -3,6 +3,18 @@
 // Fake SteamPulse Telegram Bot
 // ===============================
 
+<?php
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+    if ($uri === '/ping') {
+        echo "pong";
+        http_response_code(200);
+        exit;
+    }
+}
+
 $BOT_TOKEN = getenv("TELEGRAM_BOT_TOKEN");
 $API_URL = "https://api.telegram.org/bot$BOT_TOKEN/";
 
