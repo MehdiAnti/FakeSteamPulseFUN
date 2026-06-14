@@ -122,11 +122,11 @@ $regionsMap = [
         ["Argentina", "🇦🇷", 1, 1],
         ["Turkey", "🇹🇷", 1, 1]
     ],
-    'region_ukraine' => [["Ukraine", "🇺🇦", 18, 100]],
+    'region_ukraine' => [["Ukraine", "🇺🇦", 18, 1]],
     'region_russia' => [["Russia", "🇷🇺", 5, 100]],
     'region_brazil' => [["Brazil", "🇧🇷", 7, 100]],
     'region_india' => [["India", "🇮🇳", 24, 1]],
-    'region_kazakhstan' => [["Kazakhstan", "🇰🇿", 37, 100]],
+    'region_kazakhstan' => [["Kazakhstan", "🇰🇿", 37, 1]],
     'region_china' => [["China", "🇨🇳", 23, 1]]
 ];
 
